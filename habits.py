@@ -12,6 +12,7 @@ palette = [
     ('very_thirsty', 'brown,bold', ''),
     #('moribund', '', '', '', '#60d', ''),
     #('dead', 'black','#60d', ''),
+    # TODO: refine these colors for 256 color display! 
     ]
 
 STATUS = ('very_healthy', 'healthy', 'ok', 'thirsty', 'very_thirsty', 'moribund', 'dead')
@@ -20,14 +21,13 @@ saved_habits = shelve.open('habits')
 
 class Habit:
     def __init__(self, title, rate):
-        self.last_fed = datetime.date.today() - datetime.timedelta(days=10)
-        #self.last_fed = datetime.date.today()
+        # TODO: write tests for correct health output
+        #self.last_fed = datetime.date.today() - datetime.timedelta(days=10)
+        self.last_fed = datetime.date.today()
         self.rate = rate
         self.title = title
         self.update_status()
         self.notes = []
-#        self.current_screen = urwid.Filler(urwid.Text(self.title))
-#        main.original_widget = self.current_screen
 
     def update_status(self):
         today = datetime.date.today()
@@ -85,7 +85,10 @@ class AddHabitEditBox(urwid.Filler):
     name = False
     rate = False
     def keypress(self, size, key):
+        #TODO: handle bad input for 'rate'
         if key != 'enter':
+            if self.name and self.rate:
+                self.original_widget.edit_text = ''
             return super(AddHabitEditBox, self).keypress(size, key)
         if not self.name:
             self.name = self.original_widget.edit_text
@@ -93,20 +96,15 @@ class AddHabitEditBox(urwid.Filler):
             return super(AddHabitEditBox, self).keypress(size, key)
         if not self.rate:
             self.rate = int(self.original_widget.edit_text)           
-            self.original_widget = urwid.Edit(f'Thanks! You have added {self.name} with a rate of {self.rate} days.')
-            thing.add_habit(self.name, self.rate)
-            return super(AddHabitEditBox, self).keypress(size, key)
+            self.original_widget = urwid.Edit(f'Thanks! You have added {self.name} with a rate of {self.rate} days.\nPress return to go back to the main list.')
+            my_habits.add_habit(self.name, self.rate)
+            return super(AddHabitEditBox, self).keypress(size,key)
         content.original_widget = get_main_habit_list()
 
 def ask_new_habit():
     habit_input = urwid.Edit(u'Add habit?\n')
     edit_box_habitname = urwid.BoxAdapter(AddHabitEditBox(habit_input), height=5)
     content.original_widget = edit_box_habitname
-    # editor = urwid.Edit(u'Pick your rate...\n')
-    # edit_box_rate = EditBox(editor, valign='middle', top=1, bottom=1)
-    # content.original_widget = edit_box_rate
-    #thing.add_habit(edit_box_habitname.get_input(), int(edit_box_rate.get_input()))
-    #content.original_widget = urwid.Text(edit_box_habitname.get_input()) 
 
 def handle_input(key):
     key = key.lower()
@@ -116,13 +114,12 @@ def handle_input(key):
         ask_new_habit()
 
 def get_main_habit_list():
-    return get_urwid_habits(thing.habits)
-    #return urwid.Filler(get_urwid_habits(thing.habits), valign='middle', top=1, bottom=1)
+    return get_urwid_habits(my_habits.habits)
 
-thing = HabitList()
+my_habits = HabitList()
 
 header_text = urwid.Text(u'HABITS')
-instructions = urwid.Text(u'(u)pdate (s)urvey (a)dd (e)dit (d)elete (q)uit')
+instructions = urwid.Text(u'(u)pdate (a)dd (e)dit (d)elete (q)uit')
 content = urwid.Filler(get_main_habit_list(), valign='middle')
 layout = urwid.Frame(body=content, header=header_text, footer=instructions)
 loop = urwid.MainLoop(layout, palette=palette, unhandled_input=handle_input)
