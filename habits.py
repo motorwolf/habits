@@ -6,13 +6,13 @@ import math
 
 
 palette = [
-    ('very_healthy', 'light green,bold', ''),
-    ('healthy', 'dark green,bold', ''),
-    ('ok', 'white', ''),
-    ('thirsty', 'yellow,bold', ''),
-    ('very_thirsty', 'brown,bold', ''),
-    # ('moribund', '', '', '', '#60d', ''),
-    # ('dead', 'black','#60d', ''),
+    ('very_healthy', '', '', '', '#0f0', ''),
+    ('healthy', '', '', '', '#ae3', ''),
+    ('ok', '', '', '', '#fe4', ''),
+    ('thirsty', '', '', '', '#fb2', ''),
+    ('very_thirsty', '', '', '', '#f72', ''),
+    ('moribund', '', '', '', '#e31', ''),
+    ('dead', '', '','','#c00', ''),
     # TODO: refine these colors for 256 color display!
 ]
 
@@ -25,8 +25,8 @@ saved_habits = shelve.open('habits')
 class Habit:
     def __init__(self, title, rate):
         # TODO: write tests for correct health output
-        self.last_fed = datetime.date.today() - datetime.timedelta(days=10)
-        #self.last_fed = datetime.date.today()
+        #self.last_fed = datetime.date.today() - datetime.timedelta(days=100)
+        self.last_fed = datetime.date.today()
         self.rate = rate
         self.title = title
         self.update_status()
@@ -35,8 +35,9 @@ class Habit:
     def update_status(self):
         today = datetime.date.today()
         days_since_fed = today - self.last_fed
-        self.status = STATUS[min(math.floor(
-            days_since_fed.days / self.rate), len(STATUS) - 1)]
+        self.status_value = min(math.floor(
+            days_since_fed.days / self.rate), len(STATUS) - 1)
+        self.status = STATUS[self.status_value]
 
     def update_habit(self, update_time, update):
         if update:
@@ -66,6 +67,14 @@ class HabitList:
     def save_habits(self):
         saved_habits['habits'] = self.habits
 
+    def get_ordered_habits(self):
+        habit_and_health = []
+        for habit in self.habits.keys():
+            habit_and_health.append((habit, self.habits[habit].status_value))
+        def sort_value(item):
+            return item[1]
+        habit_and_health.sort(reverse=True, key=sort_value)
+        return [self.habits[habit[0]] for habit in habit_and_health]
 
 def selection_menu(title, choices, action):
     body = [urwid.Text(title), urwid.Divider()]
@@ -128,6 +137,7 @@ class UpdateAllHabitsAsker():
             content.original_widget = urwid.BoxAdapter(urwid.ListBox(
                 urwid.SimpleFocusListWalker(buttons)), height=5)
         else:
+            my_habits.save_habits()
             content.original_widget = get_main_habit_list()
 
 
@@ -167,6 +177,8 @@ def ask_update_all_habits():
 
 def handle_input(key):
     # TODO: fix unexpected input problems
+    if type(key) is not str: 
+        return
     key = key.lower()
     if key == 'q':
         quit()
@@ -177,11 +189,24 @@ def handle_input(key):
 
 
 def get_main_habit_list():
-    return get_urwid_habits(my_habits.habits.values())
+    return get_urwid_habits(my_habits.get_ordered_habits())
 
 
 my_habits = HabitList()
 
+my_habits.get_habit_status()
+
+def test():
+    for i in range(7):
+        my_habits.add_habit(f'test{i}', 1)
+        my_habits.habits[f'test{i}'].status = STATUS[i]
+
+test()
+#test_habit.last_fed = datetime.date.today() - datetime.timedelta(days=2)
+#test_habit.update_status()
+#test_habit.status_value = 3
+
+#my_habits.habits['test'] = test_habit
 
 header_text = urwid.Text(u'HABITS')
 instructions = urwid.Text(u'(u)pdate (a)dd (e)dit (d)elete (q)uit')
