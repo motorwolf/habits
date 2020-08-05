@@ -13,7 +13,6 @@ palette = [
     ('very_thirsty', '', '', '', '#f72', ''),
     ('moribund', '', '', '', '#e31', ''),
     ('dead', '', '','','#c00', ''),
-    # TODO: refine these colors for 256 color display!
 ]
 
 STATUS = ('very_healthy', 'healthy', 'ok', 'thirsty',
@@ -24,8 +23,6 @@ saved_habits = shelve.open('habits')
 
 class Habit:
     def __init__(self, title, rate):
-        # TODO: write tests for correct health output
-        #self.last_fed = datetime.date.today() - datetime.timedelta(days=100)
         self.last_fed = datetime.date.today()
         self.rate = rate
         self.title = title
@@ -75,6 +72,9 @@ class HabitList:
             return item[1]
         habit_and_health.sort(reverse=True, key=sort_value)
         return [self.habits[habit[0]] for habit in habit_and_health]
+
+    def remove_habit(self, habit_name):
+        del self.habits[habit_name]
 
 def selection_menu(title, choices, action):
     body = [urwid.Text(title), urwid.Divider()]
@@ -138,8 +138,7 @@ class UpdateAllHabitsAsker():
                 urwid.SimpleFocusListWalker(buttons)), height=5)
         else:
             my_habits.save_habits()
-            content.original_widget = get_main_habit_list()
-
+            content.original_widget = get_main_habit_list() 
 
 class AddHabitEditBox(urwid.Filler):
     name = None
@@ -201,12 +200,7 @@ def test():
         my_habits.add_habit(f'test{i}', 1)
         my_habits.habits[f'test{i}'].status = STATUS[i]
 
-test()
-#test_habit.last_fed = datetime.date.today() - datetime.timedelta(days=2)
-#test_habit.update_status()
-#test_habit.status_value = 3
-
-#my_habits.habits['test'] = test_habit
+#test()
 
 header_text = urwid.Text(u'HABITS')
 instructions = urwid.Text(u'(u)pdate (a)dd (e)dit (d)elete (q)uit')
